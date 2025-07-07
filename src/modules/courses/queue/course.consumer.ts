@@ -5,6 +5,7 @@ import { COURSE_QUEUE } from 'src/core/queue/queue.constants';
 import { BaseConsumer } from './base.consumer';
 import { UploadCourseImageDto } from '../dto/upload-course-image.dto';
 import { CoursesService } from '../courses.service';
+import { DeleteCourseImageDto } from '../dto/delete-course-image.dto';
 
 @Processor(COURSE_QUEUE)
 export class CourseConsumer extends BaseConsumer {
@@ -18,6 +19,11 @@ export class CourseConsumer extends BaseConsumer {
   @Process(`createCourseImage`)
   async createCourseImage(job: Job<UploadCourseImageDto>) {
     return this.courseService.createCourseImage(job.data);
+  }
+
+  @Process(`deleteCourseImage`)
+  async deleteCourseImage(job: Job<DeleteCourseImageDto>) {
+    return this.courseService.deleteCourseImage(job.data);
   }
 
   // if want override error handler

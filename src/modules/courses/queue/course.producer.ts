@@ -3,6 +3,7 @@ import { InjectQueue } from '@nestjs/bull';
 import { Queue } from 'bull';
 import { COURSE_QUEUE } from 'src/core/queue/queue.constants';
 import { UploadCourseImageDto } from '../dto/upload-course-image.dto';
+import { DeleteCourseImageDto } from '../dto/delete-course-image.dto';
 
 @Injectable()
 export class CourseProducer {
@@ -10,5 +11,9 @@ export class CourseProducer {
 
   async uploadCourseImage(payload: UploadCourseImageDto) {
     return await this.courseQueue.add(`createCourseImage`, payload);
+  }
+
+  async deleteCourseImage(payload: DeleteCourseImageDto) {
+    return await this.courseQueue.add(`deleteCourseImage`, payload);
   }
 }

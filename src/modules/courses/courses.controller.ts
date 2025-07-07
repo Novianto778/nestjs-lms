@@ -88,16 +88,31 @@ export class CoursesController {
   }
 
   @Put(':id')
+  @UseInterceptors(FilesInterceptor(`images`))
   @Roles(Role.ADMIN, Role.INSTRUCTOR)
   async update(
     @Param('id') id: string,
     @User() user: IUser,
     @Body() data: UpdateCourseDto,
+    @UploadedFiles(
+      new ParseFilePipe({
+        validators: [
+          new FileTypeValidator({ fileType: `.(png|jpeg|jpg)` }),
+          new MaxFileSizeValidator({ maxSize: 1024 * 1024 * 5 }), // 5MB
+        ],
+      }),
+      new MaxFileCountValidationPipe(1),
+    )
+    files: Express.Multer.File[],
   ) {
-    const course = await this.coursesService.update(id, {
-      ...data,
-      instructorId: user.id,
-    });
+    const course = await this.coursesService.update(
+      id,
+      {
+        ...data,
+        instructorId: user.id,
+      },
+      files,
+    );
     return {
       data: course,
       message: 'Course updated',

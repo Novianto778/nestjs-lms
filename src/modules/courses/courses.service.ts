@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { DatabaseService } from 'src/database/database.service';
 import { CreateCourseDto } from './dto/create-course.dto';
 import { UpdateCourseDto } from './dto/update-course.dto';
@@ -10,6 +10,7 @@ import { UploadCourseImageDto } from './dto/upload-course-image.dto';
 import { CloudinaryService } from 'src/modules/cloudinary/cloudinary.services';
 import { FileService } from '../utilities/file/file.service';
 import { CourseProducer } from './queue/course.producer';
+import { DeleteCourseImageDto } from './dto/delete-course-image.dto';
 
 @Injectable()
 export class CoursesService {
@@ -59,7 +60,14 @@ export class CoursesService {
   }
 
   async create(data: CreateCourseDto, images: Express.Multer.File[]) {
-    const slug = slugify(data.title);
+    let slug = slugify(data.title);
+    // check if course with slug already exists, add increment number to slug
+    const currentCourse = await this.databaseService.course.findUnique({
+      where: { slug },
+    });
+    if (currentCourse) {
+      slug = `${slug}-${currentCourse.id}`;
+    }
     const course = await this.databaseService.course.create({
       data: { ...data, slug },
     });
@@ -83,30 +91,57 @@ export class CoursesService {
       where: { id: courseId },
       data: {
         thumbnailUrl: result.secure_url,
+        thumb_public_id: result.public_id,
       },
     });
   }
 
-  async update(id: string, data: UpdateCourseDto) {
-    return this.databaseService.course.update({
-      where: { id },
-      data,
+  async deleteCourseImage({ courseId }: DeleteCourseImageDto) {
+    const course = await this.databaseService.course.findUnique({
+      where: { id: courseId },
     });
-  }
+    if (!course) throw new NotFoundException('Course not found');
+    if (!course.thumb_public_id)
+      throw new NotFoundException('Course image not found');
 
-  async delete(id: string) {
-    return this.databaseService.course.delete({ where: { id } });
-  }
-
-  async uploadCourseImage({ base64File, courseId }: UploadCourseImageDto) {
-    const buffer = this.fileService.base64ToBuffer(base64File);
-    const result = await this.cloudinaryService.uploadImage(buffer);
-
+    await this.cloudinaryService.deleteImage(course.thumb_public_id);
     return this.databaseService.course.update({
       where: { id: courseId },
       data: {
-        thumbnailUrl: result.secure_url,
+        thumbnailUrl: null,
+        thumb_public_id: null,
       },
     });
+  }
+
+  async update(
+    id: string,
+    data: UpdateCourseDto,
+    images: Express.Multer.File[],
+  ) {
+    const course = await this.databaseService.course.update({
+      where: { id },
+      data,
+    });
+
+    for (const image of images) {
+      await this.courseProducer.uploadCourseImage({
+        base64File: this.fileService.bufferToBase64(image.buffer),
+        mimeType: image.mimetype,
+        courseId: course.id,
+      });
+    }
+
+    return course;
+  }
+
+  async delete(id: string) {
+    await this.courseProducer.deleteCourseImage({
+      courseId: id,
+    });
+
+    return {
+      courseId: id,
+    };
   }
 }

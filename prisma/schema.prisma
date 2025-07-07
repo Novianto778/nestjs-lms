@@ -40,6 +40,7 @@ model Course {
   slug         String     @unique
   description  String
   thumbnailUrl String?
+  thumb_public_id String?
   price        Int         @default(0) // Free if 0
   isPublished  Boolean     @default(false)
   createdAt    DateTime    @default(now())
