@@ -8,10 +8,10 @@ import { ConflictException, UnauthorizedException } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { ConfigService } from '@nestjs/config';
 import { CacheService } from 'src/core/cache/cache.service';
+import ms, { StringValue } from 'ms';
 
 @Injectable()
 export class AuthService {
-  private readonly cacheTtl = 60 * 60 * 24;
   private readonly cachePrefix = 'auth';
 
   constructor(
@@ -21,6 +21,12 @@ export class AuthService {
     private cacheService: CacheService,
   ) {}
 
+  private getCacheTtl(): number {
+    return ms(
+      this.config.get<string>('jwt.refreshTokenExpiresIn') as StringValue,
+    );
+  }
+
   async register(dto: RegisterDto) {
     const exists = await this.userService.findByEmail(dto.email);
     if (exists) throw new ConflictException('Email already exists');
@@ -28,10 +34,11 @@ export class AuthService {
     const hash = await bcrypt.hash(dto.password, 10);
     const user = await this.userService.create({ ...dto, password: hash });
     const payload = this.signPayload(user);
+
     await this.cacheService.set(
       `${this.cachePrefix}:refresh:${user.id}`,
       payload,
-      this.cacheTtl,
+      this.getCacheTtl(),
     );
     return payload;
   }
@@ -47,7 +54,7 @@ export class AuthService {
     await this.cacheService.set(
       `${this.cachePrefix}:refresh:${user.id}`,
       payload,
-      this.cacheTtl,
+      this.getCacheTtl(),
     );
     return payload;
   }
@@ -70,7 +77,7 @@ export class AuthService {
     await this.cacheService.set(
       `${this.cachePrefix}:refresh:${user.id}`,
       response,
-      this.cacheTtl,
+      this.getCacheTtl(),
     );
     return response;
   }
