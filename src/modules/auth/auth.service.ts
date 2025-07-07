@@ -7,13 +7,18 @@ import { User } from 'generated/prisma/client';
 import { ConflictException, UnauthorizedException } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { ConfigService } from '@nestjs/config';
+import { CacheService } from 'src/core/cache/cache.service';
 
 @Injectable()
 export class AuthService {
+  private readonly cacheTtl = 60 * 60 * 24;
+  private readonly cachePrefix = 'auth';
+
   constructor(
     private userService: UserService,
     private jwtService: JwtService,
     private config: ConfigService,
+    private cacheService: CacheService,
   ) {}
 
   async register(dto: RegisterDto) {
@@ -22,7 +27,13 @@ export class AuthService {
 
     const hash = await bcrypt.hash(dto.password, 10);
     const user = await this.userService.create({ ...dto, password: hash });
-    return this.signPayload(user);
+    const payload = this.signPayload(user);
+    await this.cacheService.set(
+      `${this.cachePrefix}:refresh:${user.id}`,
+      payload,
+      this.cacheTtl,
+    );
+    return payload;
   }
 
   async login(dto: LoginDto) {
@@ -32,15 +43,61 @@ export class AuthService {
     const match = await bcrypt.compare(dto.password, user.password);
     if (!match) throw new UnauthorizedException('Invalid credentials');
 
-    return this.signPayload(user);
+    const payload = this.signPayload(user);
+    await this.cacheService.set(
+      `${this.cachePrefix}:refresh:${user.id}`,
+      payload,
+      this.cacheTtl,
+    );
+    return payload;
   }
 
-  signPayload(user: User) {
-    const payload = { sub: user.id, role: user.role };
+  async refreshToken(refreshToken: string) {
+    const payload = this.jwtService.verify(refreshToken, {
+      secret: this.config.get('jwt.refreshTokenSecret'),
+    });
+    if (!payload) throw new UnauthorizedException('Invalid token');
+
+    const cachedToken = await this.cacheService.get<string>(
+      `${this.cachePrefix}:refresh:${payload.sub}`,
+    );
+    if (!cachedToken) throw new UnauthorizedException('Invalid token');
+
+    const user = await this.userService.findById(payload.sub);
+    if (!user) throw new UnauthorizedException('User not found');
+
+    const response = this.signPayload(user);
+    await this.cacheService.set(
+      `${this.cachePrefix}:refresh:${user.id}`,
+      response,
+      this.cacheTtl,
+    );
+    return response;
+  }
+
+  async removeRefreshToken(refreshToken: string) {
+    const payload = this.jwtService.verify(refreshToken, {
+      secret: this.config.get('jwt.refreshTokenSecret'),
+    });
+    if (!payload) throw new UnauthorizedException('Invalid token');
+    // find the token in the cache
+    const cachedToken = await this.cacheService.get<string>(
+      `${this.cachePrefix}:refresh:${payload.sub}`,
+    );
+
+    if (!cachedToken) throw new UnauthorizedException('Invalid token');
+
+    const user = await this.userService.findById(payload.sub);
+    if (!user) throw new UnauthorizedException('User not found');
+    await this.cacheService.del(`${this.cachePrefix}:refresh:${user.id}`);
+  }
+
+  private signPayload(user: User) {
     return {
-      accessToken: this.jwtService.sign(payload, {
-        expiresIn: this.config.get('jwt.expiresIn'),
-      }),
+      tokens: {
+        accessToken: this.generateAccessToken(user),
+        refreshToken: this.generateRefreshToken(user),
+      },
       user: {
         id: user.id,
         email: user.email,
@@ -48,5 +105,21 @@ export class AuthService {
         role: user.role,
       },
     };
+  }
+
+  private generateAccessToken(user: User) {
+    const payload = { sub: user.id, role: user.role };
+    return this.jwtService.sign(payload, {
+      expiresIn: this.config.get('jwt.expiresIn'),
+      secret: this.config.get('jwt.secret'),
+    });
+  }
+
+  private generateRefreshToken(user: User) {
+    const payload = { sub: user.id, role: user.role };
+    return this.jwtService.sign(payload, {
+      expiresIn: this.config.get('jwt.refreshTokenExpiresIn'),
+      secret: this.config.get('jwt.refreshTokenSecret'),
+    });
   }
 }

@@ -5,6 +5,8 @@ import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { JwtAuthGuard } from './guard/jwt-auth.guard';
 import { HttpStatus } from '@nestjs/common';
+import { LogoutDto } from './dto/logout.dto';
+import { RefreshTokenDto } from './dto/refresh.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -27,6 +29,26 @@ export class AuthController {
     return {
       message: 'Successfully logged in',
       data: response,
+      statusCode: HttpStatus.OK,
+    };
+  }
+
+  @Post('refresh')
+  async refreshToken(@Body() dto: RefreshTokenDto) {
+    const response = await this.authService.refreshToken(dto.refreshToken);
+    return {
+      message: 'Successfully refreshed token',
+      data: response,
+      statusCode: HttpStatus.OK,
+    };
+  }
+
+  @Post('logout')
+  async logout(@Body() dto: LogoutDto) {
+    await this.authService.removeRefreshToken(dto.refreshToken);
+    return {
+      message: 'Successfully logged out',
+      data: {},
       statusCode: HttpStatus.OK,
     };
   }
