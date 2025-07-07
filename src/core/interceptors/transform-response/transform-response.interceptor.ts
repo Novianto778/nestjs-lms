@@ -10,6 +10,9 @@ import { map } from 'rxjs/operators';
 type Response<T> = {
   data: T;
   meta?: any;
+  message?: string;
+  statusCode?: number;
+  timestamp?: string;
 };
 
 @Injectable()
@@ -20,6 +23,9 @@ export class TransformResponseInterceptor implements NestInterceptor {
         if (!response) {
           return {
             data: [],
+            message: 'No data found',
+            statusCode: 404,
+            timestamp: new Date().toISOString(),
           };
         }
 
@@ -27,9 +33,27 @@ export class TransformResponseInterceptor implements NestInterceptor {
           return {
             data: response.data,
             meta: response.meta,
+            message: response.message || 'Success',
+            statusCode: response.statusCode || 200,
+            timestamp: new Date().toISOString(),
           };
         }
-        return { data: response };
+
+        if (response.data) {
+          return {
+            data: response.data,
+            message: response.message || 'Success',
+            statusCode: response.statusCode || 200,
+            timestamp: new Date().toISOString(),
+          };
+        }
+
+        return {
+          data: response,
+          message: 'Success',
+          statusCode: 200,
+          timestamp: new Date().toISOString(),
+        };
       }),
     );
   }

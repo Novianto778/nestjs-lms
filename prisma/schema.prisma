@@ -14,9 +14,94 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum Role {
+  ADMIN
+  INSTRUCTOR
+  STUDENT
+}
+
 model User {
-  id        Int       @id @default(autoincrement())
-  email     String    @unique
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  id         String     @id @default(uuid())
+  email      String     @unique
+  password   String
+  name       String
+  role       Role       @default(STUDENT)
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+
+  coursesCreated   Course[]       @relation("InstructorCourses")
+  enrollments      Enrollment[]
+  messagesSent     ChatMessage[]  @relation("SenderMessages")
+}
+
+model Course {
+  id           String     @id @default(uuid())
+  title        String
+  description  String
+  thumbnailUrl String?
+  price        Int         @default(0) // Free if 0
+  isPublished  Boolean     @default(false)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  instructorId String
+  instructor   User        @relation("InstructorCourses", fields: [instructorId], references: [id])
+
+  modules      Module[]
+  enrollments  Enrollment[]
+  messages     ChatMessage[]
+}
+
+model Module {
+  id         String     @id @default(uuid())
+  title      String
+  videoUrl   String?
+  order      Int        // To sort modules in a course
+  courseId   String
+  course     Course     @relation(fields: [courseId], references: [id])
+  progress   Progress[]
+}
+
+model Enrollment {
+  id         String     @id @default(uuid())
+  userId     String
+  courseId   String
+  enrolledAt DateTime   @default(now())
+
+  user       User       @relation(fields: [userId], references: [id])
+  course     Course     @relation(fields: [courseId], references: [id])
+  progress   Progress[]
+  payment    Payment?
+}
+
+model Progress {
+  id         String     @id @default(uuid())
+  enrollmentId String
+  moduleId   String
+  completed  Boolean    @default(false)
+
+  enrollment Enrollment @relation(fields: [enrollmentId], references: [id])
+  module     Module     @relation(fields: [moduleId], references: [id])
+}
+
+model ChatMessage {
+  id         String     @id @default(uuid())
+  content    String
+  createdAt  DateTime   @default(now())
+  senderId   String
+  courseId   String
+
+  sender     User       @relation("SenderMessages", fields: [senderId], references: [id])
+  course     Course     @relation(fields: [courseId], references: [id])
+}
+
+model Payment {
+  id           String    @id @default(uuid())
+  stripeId     String    @unique
+  amount       Int
+  status       String
+  paidAt       DateTime
+  enrollmentId String    @unique
+
+  enrollment   Enrollment @relation(fields: [enrollmentId], references: [id])
 }
