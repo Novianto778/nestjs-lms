@@ -13,9 +13,10 @@ import { LoggerService } from './logger/logger.service';
 import { LoggerMiddleware } from './logger/logger.middleware';
 import { DatabaseModule } from 'src/database/database.module';
 import { CacheModule } from '@nestjs/cache-manager';
-import * as redisStore from 'ioredis';
 import { CacheService } from './cache/cache.service';
 import { AllExceptionsFilter } from './filter/all-exceptions.filter';
+import { redisStore } from 'cache-manager-redis-store';
+import { RedisClientProvider } from 'src/common/provider/redis.provider';
 
 @Global() // Make this module global so all modules can use it without importing it
 @Module({
@@ -41,6 +42,7 @@ import { AllExceptionsFilter } from './filter/all-exceptions.filter';
     }),
   ],
   providers: [
+    RedisClientProvider,
     {
       provide: APP_INTERCEPTOR,
       useClass: TransformResponseInterceptor,
@@ -52,7 +54,7 @@ import { AllExceptionsFilter } from './filter/all-exceptions.filter';
     LoggerService,
     CacheService,
   ],
-  exports: [LoggerService, CacheService],
+  exports: [LoggerService, CacheService, 'REDIS_CLIENT'],
 })
 export class CoreModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {

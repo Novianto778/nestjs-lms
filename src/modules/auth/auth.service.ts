@@ -37,7 +37,7 @@ export class AuthService {
 
     await this.cacheService.set(
       `${this.cachePrefix}:refresh:${user.id}`,
-      payload,
+      payload.tokens.refreshToken,
       this.getCacheTtl(),
     );
     return payload;
@@ -53,7 +53,7 @@ export class AuthService {
     const payload = this.signPayload(user);
     await this.cacheService.set(
       `${this.cachePrefix}:refresh:${user.id}`,
-      payload,
+      payload.tokens.refreshToken,
       this.getCacheTtl(),
     );
     return payload;
@@ -76,7 +76,7 @@ export class AuthService {
     const response = this.signPayload(user);
     await this.cacheService.set(
       `${this.cachePrefix}:refresh:${user.id}`,
-      response,
+      response.tokens.refreshToken,
       this.getCacheTtl(),
     );
     return response;

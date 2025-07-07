@@ -1,29 +1,34 @@
-import { CACHE_MANAGER } from '@nestjs/cache-manager';
-import { Injectable, Inject } from '@nestjs/common';
-import { Cache } from 'cache-manager';
+// cache.service.ts
+import { Inject, Injectable, OnModuleDestroy } from '@nestjs/common';
+import Redis from 'ioredis';
 
 @Injectable()
-export class CacheService {
-  constructor(@Inject(CACHE_MANAGER) private readonly cache: Cache) {}
+export class CacheService implements OnModuleDestroy {
+  constructor(@Inject('REDIS_CLIENT') private readonly redis: Redis) {}
 
-  async get<T>(key: string): Promise<T | undefined> {
-    return await this.cache.get<T>(key);
+  async get<T>(key: string): Promise<T | null> {
+    const value = await this.redis.get(key);
+    return value ? (JSON.parse(value) as T) : null;
   }
 
   async set(key: string, value: any, ttl?: number): Promise<void> {
-    await this.cache.set(key, value, { ttl } as any);
+    const payload = JSON.stringify(value);
+    if (ttl) {
+      await this.redis.set(key, payload, 'EX', ttl);
+    } else {
+      await this.redis.set(key, payload);
+    }
   }
 
   async del(key: string): Promise<void> {
-    await this.cache.del(key);
+    await this.redis.del(key);
   }
 
   async reset(): Promise<void> {
-    await this.cache.clear();
+    await this.redis.flushdb();
   }
 
-  async onModuleDestroy() {
-    const redisClient = (this.cache.stores as any).getClient();
-    redisClient.quit();
+  async onModuleDestroy(): Promise<void> {
+    await this.redis.quit();
   }
 }
