@@ -17,6 +17,7 @@ import { CacheService } from './cache/cache.service';
 import { AllExceptionsFilter } from './filter/all-exceptions.filter';
 import { redisStore } from 'cache-manager-redis-store';
 import { RedisClientProvider } from 'src/common/provider/redis.provider';
+import { QueueModule } from './queue/queue.module';
 
 @Global() // Make this module global so all modules can use it without importing it
 @Module({
@@ -26,6 +27,7 @@ import { RedisClientProvider } from 'src/common/provider/redis.provider';
       load: [config],
     }),
     DatabaseModule,
+    QueueModule,
     CacheModule.registerAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({

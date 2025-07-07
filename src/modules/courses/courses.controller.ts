@@ -2,14 +2,19 @@ import {
   Body,
   Controller,
   Delete,
+  FileTypeValidator,
   Get,
   HttpStatus,
+  MaxFileSizeValidator,
   NotFoundException,
   Param,
+  ParseFilePipe,
   Post,
   Put,
   Query,
+  UploadedFiles,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
 import { CoursesService } from './courses.service';
 import { PaginationDto } from 'src/common/dto/pagination.dto';
@@ -21,6 +26,8 @@ import { JwtAuthGuard } from '../auth/guard/jwt-auth.guard';
 import { RolesGuard } from 'src/common/guards/roles.guard';
 import { Roles } from 'src/common/decorators/roles.decorators';
 import { Role } from 'generated/prisma';
+import { FilesInterceptor } from '@nestjs/platform-express';
+import { MaxFileCountValidationPipe } from 'src/common/pipes/max-file-count-validation/max-file-count-validation.pipe';
 
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('courses')
@@ -50,12 +57,29 @@ export class CoursesController {
   }
 
   @Post()
+  @UseInterceptors(FilesInterceptor(`images`))
   @Roles(Role.ADMIN, Role.INSTRUCTOR)
-  async create(@User() user: IUser, @Body() data: CreateCourseDto) {
-    const course = await this.coursesService.create({
-      ...data,
-      instructorId: user.id,
-    });
+  async create(
+    @User() user: IUser,
+    @Body() data: CreateCourseDto,
+    @UploadedFiles(
+      new ParseFilePipe({
+        validators: [
+          new FileTypeValidator({ fileType: `.(png|jpeg|jpg)` }),
+          new MaxFileSizeValidator({ maxSize: 1024 * 1024 * 5 }), // 5MB
+        ],
+      }),
+      new MaxFileCountValidationPipe(1),
+    )
+    files: Express.Multer.File[],
+  ) {
+    const course = await this.coursesService.create(
+      {
+        ...data,
+        instructorId: user.id,
+      },
+      files,
+    );
     return {
       data: course,
       message: 'Course created',

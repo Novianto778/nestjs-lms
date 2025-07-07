@@ -30,6 +30,8 @@ export class CreateCourseDto {
   price: number;
 
   @IsBoolean()
+  @IsOptional()
+  @Type(() => Boolean)
   isPublished: boolean;
 
   @IsString()

@@ -6,10 +6,19 @@ import { slugify } from 'src/common/utils/slug.utils';
 import { PaginationDto } from 'src/common/dto/pagination.dto';
 import { createMeta } from 'src/common/utils/pagination.utils';
 import { Prisma } from 'generated/prisma';
+import { UploadCourseImageDto } from './dto/upload-course-image.dto';
+import { CloudinaryService } from 'src/modules/cloudinary/cloudinary.services';
+import { FileService } from '../utilities/file/file.service';
+import { CourseProducer } from './queue/course.producer';
 
 @Injectable()
 export class CoursesService {
-  constructor(private databaseService: DatabaseService) {}
+  constructor(
+    private databaseService: DatabaseService,
+    private cloudinaryService: CloudinaryService,
+    private fileService: FileService,
+    private courseProducer: CourseProducer,
+  ) {}
 
   async findAll(pagination: PaginationDto) {
     const { page, limit, search } = pagination;
@@ -49,10 +58,32 @@ export class CoursesService {
     return this.databaseService.course.findUnique({ where: { slug } });
   }
 
-  async create(data: CreateCourseDto) {
+  async create(data: CreateCourseDto, images: Express.Multer.File[]) {
     const slug = slugify(data.title);
-    return this.databaseService.course.create({
+    const course = await this.databaseService.course.create({
       data: { ...data, slug },
+    });
+
+    for (const image of images) {
+      await this.courseProducer.uploadCourseImage({
+        base64File: this.fileService.bufferToBase64(image.buffer),
+        mimeType: image.mimetype,
+        courseId: course.id,
+      });
+    }
+
+    return course;
+  }
+
+  async createCourseImage({ base64File, courseId }: UploadCourseImageDto) {
+    const buffer = this.fileService.base64ToBuffer(base64File);
+    const result = await this.cloudinaryService.uploadImage(buffer);
+
+    return this.databaseService.course.update({
+      where: { id: courseId },
+      data: {
+        thumbnailUrl: result.secure_url,
+      },
     });
   }
 
@@ -65,5 +96,17 @@ export class CoursesService {
 
   async delete(id: string) {
     return this.databaseService.course.delete({ where: { id } });
+  }
+
+  async uploadCourseImage({ base64File, courseId }: UploadCourseImageDto) {
+    const buffer = this.fileService.base64ToBuffer(base64File);
+    const result = await this.cloudinaryService.uploadImage(buffer);
+
+    return this.databaseService.course.update({
+      where: { id: courseId },
+      data: {
+        thumbnailUrl: result.secure_url,
+      },
+    });
   }
 }
