@@ -29,6 +29,7 @@ import { Roles } from 'src/common/decorators/roles.decorators';
 import { Role } from 'generated/prisma';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { MaxFileCountValidationPipe } from 'src/common/pipes/max-file-count-validation/max-file-count-validation.pipe';
+import { Public } from 'src/common/decorators/public.decorators';
 
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('courses')
@@ -143,6 +144,17 @@ export class CoursesController {
     return {
       data: course,
       message: 'Course published',
+      status: HttpStatus.OK,
+    };
+  }
+
+  @Public()
+  @Get('instructor/:id')
+  async instructorCourses(@Param('id') instructorId: string) {
+    const courses = await this.coursesService.instructorCourses(instructorId);
+    return {
+      data: courses,
+      message: 'Courses fetched',
       status: HttpStatus.OK,
     };
   }

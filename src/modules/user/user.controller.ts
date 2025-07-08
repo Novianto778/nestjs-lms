@@ -49,8 +49,8 @@ export class UserController {
     };
   }
 
+  @Roles([Role.ADMIN], 'Only admin can create user')
   @Post()
-  @Roles([Role.ADMIN])
   async create(@Body() data: CreateUserDto) {
     return {
       data: await this.userService.create(data),

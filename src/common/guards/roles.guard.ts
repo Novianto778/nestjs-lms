@@ -5,17 +5,24 @@ import {
   Injectable,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { RolesMetadata } from '../decorators/roles.decorators';
+import { ROLES_KEY, RolesMetadata } from '../decorators/roles.decorators';
+import { IS_PUBLIC_KEY } from '../decorators/public.decorators';
 
 @Injectable()
 export class RolesGuard implements CanActivate {
   constructor(private reflector: Reflector) {}
 
   canActivate(context: ExecutionContext): boolean {
-    const metadata = this.reflector.getAllAndOverride<RolesMetadata>('roles', [
+    // 1. Skip guard if route is marked @Public()
+    const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
       context.getHandler(),
       context.getClass(),
     ]);
+    if (isPublic) return true;
+    const metadata = this.reflector.getAllAndOverride<RolesMetadata>(
+      ROLES_KEY,
+      [context.getHandler(), context.getClass()],
+    );
     const { roles, message } = metadata;
     if (!roles) return true;
 

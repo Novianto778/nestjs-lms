@@ -6,8 +6,10 @@ export interface RolesMetadata {
   message?: string;
 }
 
+export const ROLES_KEY = 'roles';
+
 export const Roles = (roles: Role[], message?: string) =>
-  SetMetadata('roles', {
+  SetMetadata(ROLES_KEY, {
     roles,
     message,
   });

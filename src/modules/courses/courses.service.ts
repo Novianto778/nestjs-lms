@@ -70,8 +70,9 @@ export class CoursesService {
     if (currentCourse) {
       slug = `${slug}-${uuid}`;
     }
+    const thumbnailUrl = images.length > 0 ? 'processing' : null;
     const course = await this.databaseService.course.create({
-      data: { ...data, slug },
+      data: { ...data, slug, thumbnailUrl },
     });
 
     for (const image of images) {
@@ -151,6 +152,12 @@ export class CoursesService {
     return this.databaseService.course.update({
       where: { id },
       data: { isPublished },
+    });
+  }
+
+  async instructorCourses(instructorId: string) {
+    return this.databaseService.course.findMany({
+      where: { instructorId },
     });
   }
 }

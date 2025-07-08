@@ -1,16 +1,16 @@
 import { IsEmail, IsEnum, IsOptional, IsString } from 'class-validator';
 import { Role } from 'generated/prisma/client';
+import { IsStrongPassword } from 'src/common/decorators/strong-password.decorator';
 
 export class CreateUserDto {
-  @IsOptional()
   @IsString()
   name: string;
 
   @IsEmail()
   email: string;
 
-  @IsOptional()
   @IsString()
+  @IsStrongPassword()
   password: string;
 
   @IsOptional()
