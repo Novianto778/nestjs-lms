@@ -9,6 +9,7 @@ import {
   NotFoundException,
   Param,
   ParseFilePipe,
+  Patch,
   Post,
   Put,
   Query,
@@ -58,12 +59,13 @@ export class CoursesController {
 
   @Post()
   @UseInterceptors(FilesInterceptor(`images`))
-  @Roles(Role.ADMIN, Role.INSTRUCTOR)
+  @Roles([Role.INSTRUCTOR])
   async create(
     @User() user: IUser,
     @Body() data: CreateCourseDto,
     @UploadedFiles(
       new ParseFilePipe({
+        fileIsRequired: false,
         validators: [
           new FileTypeValidator({ fileType: `.(png|jpeg|jpg)` }),
           new MaxFileSizeValidator({ maxSize: 1024 * 1024 * 5 }), // 5MB
@@ -89,13 +91,14 @@ export class CoursesController {
 
   @Put(':id')
   @UseInterceptors(FilesInterceptor(`images`))
-  @Roles(Role.ADMIN, Role.INSTRUCTOR)
+  @Roles([Role.INSTRUCTOR])
   async update(
     @Param('id') id: string,
     @User() user: IUser,
     @Body() data: UpdateCourseDto,
     @UploadedFiles(
       new ParseFilePipe({
+        fileIsRequired: false,
         validators: [
           new FileTypeValidator({ fileType: `.(png|jpeg|jpg)` }),
           new MaxFileSizeValidator({ maxSize: 1024 * 1024 * 5 }), // 5MB
@@ -126,6 +129,20 @@ export class CoursesController {
     return {
       data: course,
       message: 'Course deleted',
+      status: HttpStatus.OK,
+    };
+  }
+
+  @Patch(':id/publish')
+  @Roles([Role.ADMIN, Role.INSTRUCTOR])
+  async setPublished(
+    @Param('id') id: string,
+    @Body() data: { isPublished: boolean },
+  ) {
+    const course = await this.coursesService.setPublished(id, data.isPublished);
+    return {
+      data: course,
+      message: 'Course published',
       status: HttpStatus.OK,
     };
   }

@@ -11,6 +11,7 @@ import { CloudinaryService } from 'src/modules/cloudinary/cloudinary.services';
 import { FileService } from '../utilities/file/file.service';
 import { CourseProducer } from './queue/course.producer';
 import { DeleteCourseImageDto } from './dto/delete-course-image.dto';
+import { v4 as uuidv4 } from 'uuid';
 
 @Injectable()
 export class CoursesService {
@@ -65,8 +66,9 @@ export class CoursesService {
     const currentCourse = await this.databaseService.course.findUnique({
       where: { slug },
     });
+    const uuid = uuidv4();
     if (currentCourse) {
-      slug = `${slug}-${currentCourse.id}`;
+      slug = `${slug}-${uuid}`;
     }
     const course = await this.databaseService.course.create({
       data: { ...data, slug },
@@ -143,5 +145,12 @@ export class CoursesService {
     return {
       courseId: id,
     };
+  }
+
+  async setPublished(id: string, isPublished: boolean) {
+    return this.databaseService.course.update({
+      where: { id },
+      data: { isPublished },
+    });
   }
 }

@@ -10,10 +10,14 @@ export class CourseProducer {
   constructor(@InjectQueue(COURSE_QUEUE) private courseQueue: Queue) {}
 
   async uploadCourseImage(payload: UploadCourseImageDto) {
-    return await this.courseQueue.add(`createCourseImage`, payload);
+    return await this.courseQueue.add(`createCourseImage`, payload, {
+      attempts: 3,
+    });
   }
 
   async deleteCourseImage(payload: DeleteCourseImageDto) {
-    return await this.courseQueue.add(`deleteCourseImage`, payload);
+    return await this.courseQueue.add(`deleteCourseImage`, payload, {
+      attempts: 3,
+    });
   }
 }

@@ -74,6 +74,8 @@ model Enrollment {
   course     Course     @relation(fields: [courseId], references: [id])
   progress   Progress[]
   payment    Payment?
+
+  @@unique([userId, courseId])
 }
 
 model Progress {

@@ -26,7 +26,7 @@ export class UserController {
   constructor(private readonly userService: UserService) {}
 
   @Get()
-  @Roles(Role.ADMIN)
+  @Roles([Role.ADMIN])
   async findAll(@Query() pagination: PaginationDto) {
     return {
       data: await this.userService.findAll(pagination),
@@ -36,7 +36,7 @@ export class UserController {
   }
 
   @Get(':id')
-  @Roles(Role.ADMIN)
+  @Roles([Role.ADMIN])
   async findOne(@Param('id') id: string) {
     const user = await this.userService.findById(id);
     if (!user) throw new NotFoundException('User not found');
@@ -50,7 +50,7 @@ export class UserController {
   }
 
   @Post()
-  @Roles(Role.ADMIN)
+  @Roles([Role.ADMIN])
   async create(@Body() data: CreateUserDto) {
     return {
       data: await this.userService.create(data),
@@ -60,7 +60,7 @@ export class UserController {
   }
 
   @Put(':id')
-  @Roles(Role.ADMIN)
+  @Roles([Role.ADMIN])
   async update(@Param('id') id: string, @Body() data: UpdateUserDto) {
     return {
       data: await this.userService.update(id, data),
@@ -70,7 +70,7 @@ export class UserController {
   }
 
   @Delete(':id')
-  @Roles(Role.ADMIN)
+  @Roles([Role.ADMIN])
   async delete(@Param('id') id: string) {
     return {
       data: await this.userService.delete(id),
