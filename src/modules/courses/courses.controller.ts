@@ -37,6 +37,7 @@ export class CoursesController {
   constructor(private readonly coursesService: CoursesService) {}
 
   @Get()
+  @Public()
   async findAll(@Query() pagination: PaginationDto) {
     const { data, meta } = await this.coursesService.findAll(pagination);
     return {

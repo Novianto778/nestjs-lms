@@ -19,5 +19,6 @@ import { CourseConsumer } from './queue/course.consumer';
   ],
   providers: [CoursesService, CourseProducer, CourseConsumer],
   controllers: [CoursesController],
+  exports: [CoursesService],
 })
 export class CoursesModule {}

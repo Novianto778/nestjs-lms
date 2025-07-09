@@ -8,6 +8,8 @@ import { CoursesModule } from './modules/courses/courses.module';
 import { EnrollmentModule } from './modules/enrollment/enrollment.module';
 import { LessonModule } from './modules/lesson/lesson.module';
 import { ModuleModule } from './modules/module/module.module';
+import { StripeModule } from './modules/stripe/stripe.module';
+import { PaymentModule } from './modules/payment/payment.module';
 
 @Module({
   imports: [
@@ -18,6 +20,8 @@ import { ModuleModule } from './modules/module/module.module';
     EnrollmentModule,
     LessonModule,
     ModuleModule,
+    StripeModule,
+    PaymentModule,
   ],
   controllers: [AppController],
   providers: [AppService],
