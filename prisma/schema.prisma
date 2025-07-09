@@ -45,6 +45,8 @@ model Course {
   isPublished    Boolean    @default(false)
   createdAt      DateTime   @default(now())
   updatedAt      DateTime   @updatedAt
+  isDeleted      Boolean    @default(false)
+  deletedAt      DateTime?  
 
   instructorId   String
   instructor     User       @relation("InstructorCourses", fields: [instructorId], references: [id])
@@ -59,6 +61,8 @@ model Module {
   order     Int
   courseId  String
   course    Course     @relation(fields: [courseId], references: [id])
+  isDeleted Boolean    @default(false)
+  deletedAt DateTime?
   lessons   Lesson[]
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
@@ -73,7 +77,8 @@ model Lesson {
   moduleId   String
   module     Module      @relation(fields: [moduleId], references: [id])
   progresses Progress[]
-
+  isDeleted Boolean    @default(false)
+  deletedAt DateTime?
   createdAt  DateTime    @default(now())
   updatedAt  DateTime    @updatedAt
 }

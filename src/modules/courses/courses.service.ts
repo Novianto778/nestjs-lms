@@ -1,17 +1,17 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { DatabaseService } from 'src/database/database.service';
-import { CreateCourseDto } from './dto/create-course.dto';
-import { UpdateCourseDto } from './dto/update-course.dto';
-import { slugify } from 'src/common/utils/slug.utils';
+import { Prisma } from 'generated/prisma';
 import { PaginationDto } from 'src/common/dto/pagination.dto';
 import { createMeta } from 'src/common/utils/pagination.utils';
-import { Prisma } from 'generated/prisma';
-import { UploadCourseImageDto } from './dto/upload-course-image.dto';
+import { slugify } from 'src/common/utils/slug.utils';
+import { DatabaseService } from 'src/database/database.service';
 import { CloudinaryService } from 'src/modules/cloudinary/cloudinary.services';
-import { FileService } from '../utilities/file/file.service';
-import { CourseProducer } from './queue/course.producer';
-import { DeleteCourseImageDto } from './dto/delete-course-image.dto';
 import { v4 as uuidv4 } from 'uuid';
+import { FileService } from '../utilities/file/file.service';
+import { CreateCourseDto } from './dto/create-course.dto';
+import { DeleteCourseImageDto } from './dto/delete-course-image.dto';
+import { UpdateCourseDto } from './dto/update-course.dto';
+import { UploadCourseImageDto } from './dto/upload-course-image.dto';
+import { CourseProducer } from './queue/course.producer';
 
 @Injectable()
 export class CoursesService {
@@ -141,6 +141,11 @@ export class CoursesService {
   async delete(id: string) {
     await this.courseProducer.deleteCourseImage({
       courseId: id,
+    });
+
+    await this.databaseService.course.update({
+      where: { id },
+      data: { isDeleted: true, deletedAt: new Date() },
     });
 
     return {
