@@ -9,6 +9,7 @@ import { COURSE_QUEUE } from 'src/core/queue/queue.constants';
 import { CloudinaryModule } from 'src/modules/cloudinary/cloudinary.module';
 import { CourseProducer } from './queue/course.producer';
 import { CourseConsumer } from './queue/course.consumer';
+import { SearchModule } from '../search/search.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { CourseConsumer } from './queue/course.consumer';
     BullBoardModule.forFeature({ name: COURSE_QUEUE, adapter: BullAdapter }),
     UtilitiesModule,
     CloudinaryModule,
+    SearchModule,
   ],
   providers: [CoursesService, CourseProducer, CourseConsumer],
   controllers: [CoursesController],

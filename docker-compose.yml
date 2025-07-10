@@ -23,6 +23,23 @@ services:
     volumes:
       - nestjs_starter_redis_data:/data # Needs updating
 
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.13.2
+    container_name: elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - bootstrap.memory_lock=true
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    ports:
+      - '9200:9200'
+    volumes:
+      - esdata:/usr/share/elasticsearch/data
+
 networks:
   default:
     name: nestjs_starter # Needs updating
@@ -30,3 +47,4 @@ networks:
 volumes:
   nestjs_starter_postgres_data: # Needs updating
   nestjs_starter_redis_data: # Needs updating
+  esdata:

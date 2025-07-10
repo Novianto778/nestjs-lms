@@ -12,6 +12,7 @@ import { StripeModule } from './modules/stripe/stripe.module';
 import { PaymentModule } from './modules/payment/payment.module';
 import { ProgressModule } from './modules/progress/progress.module';
 import { SearchModule } from './modules/search/search.module';
+import { SyncModule } from './modules/sync/sync.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { SearchModule } from './modules/search/search.module';
     PaymentModule,
     ProgressModule,
     SearchModule,
+    SyncModule,
   ],
   controllers: [AppController],
   providers: [AppService],

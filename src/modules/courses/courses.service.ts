@@ -12,6 +12,7 @@ import { DeleteCourseImageDto } from './dto/delete-course-image.dto';
 import { UpdateCourseDto } from './dto/update-course.dto';
 import { UploadCourseImageDto } from './dto/upload-course-image.dto';
 import { CourseProducer } from './queue/course.producer';
+import { SearchService } from '../search/search.service';
 
 @Injectable()
 export class CoursesService {
@@ -20,7 +21,30 @@ export class CoursesService {
     private cloudinaryService: CloudinaryService,
     private fileService: FileService,
     private courseProducer: CourseProducer,
+    private searchService: SearchService,
   ) {}
+
+  async getAllForSearch() {
+    const courses = await this.databaseService.course.findMany({
+      where: { isPublished: true }, // optional filter
+      include: {
+        instructor: {
+          select: {
+            name: true,
+          },
+        },
+      },
+    });
+
+    return courses.map((course) => ({
+      id: course.id,
+      title: course.title,
+      description: course.description,
+      instructorName: course.instructor.name,
+      price: course.price,
+      isPublished: course.isPublished,
+    }));
+  }
 
   async findAll(pagination: PaginationDto) {
     const { page, limit, search } = pagination;
@@ -73,6 +97,13 @@ export class CoursesService {
     const thumbnailUrl = images.length > 0 ? 'processing' : null;
     const course = await this.databaseService.course.create({
       data: { ...data, slug, thumbnailUrl },
+      include: {
+        instructor: {
+          select: {
+            name: true,
+          },
+        },
+      },
     });
 
     for (const image of images) {
@@ -82,6 +113,16 @@ export class CoursesService {
         courseId: course.id,
       });
     }
+
+    // Sync the update to Elasticsearch
+    await this.searchService.indexCourse({
+      id: course.id,
+      title: course.title,
+      description: course.description,
+      instructorName: course.instructor.name,
+      price: course.price,
+      isPublished: course.isPublished,
+    });
 
     return course;
   }
@@ -125,6 +166,13 @@ export class CoursesService {
     const course = await this.databaseService.course.update({
       where: { id },
       data,
+      include: {
+        instructor: {
+          select: {
+            name: true,
+          },
+        },
+      },
     });
 
     for (const image of images) {
@@ -134,6 +182,16 @@ export class CoursesService {
         courseId: course.id,
       });
     }
+
+    // Sync the update to Elasticsearch
+    await this.searchService.indexCourse({
+      id: course.id,
+      title: course.title,
+      description: course.description,
+      instructorName: course.instructor.name,
+      price: course.price,
+      isPublished: course.isPublished,
+    });
 
     return course;
   }
@@ -147,6 +205,9 @@ export class CoursesService {
       where: { id },
       data: { isDeleted: true, deletedAt: new Date() },
     });
+
+    // Sync the delete to Elasticsearch
+    await this.searchService.removeCourse(id);
 
     return {
       courseId: id,
