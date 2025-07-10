@@ -31,8 +31,7 @@ export class AuthService {
     const exists = await this.userService.findByEmail(dto.email);
     if (exists) throw new ConflictException('Email already exists');
 
-    const hash = await bcrypt.hash(dto.password, 10);
-    const user = await this.userService.create({ ...dto, password: hash });
+    const user = await this.userService.create(dto);
     const payload = this.signPayload(user);
 
     await this.cacheService.set(
@@ -48,6 +47,7 @@ export class AuthService {
     if (!user) throw new UnauthorizedException('Invalid credentials');
 
     const match = await bcrypt.compare(dto.password, user.password);
+
     if (!match) throw new UnauthorizedException('Invalid credentials');
 
     const payload = this.signPayload(user);

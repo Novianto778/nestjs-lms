@@ -10,6 +10,8 @@ import { LessonModule } from './modules/lesson/lesson.module';
 import { ModuleModule } from './modules/module/module.module';
 import { StripeModule } from './modules/stripe/stripe.module';
 import { PaymentModule } from './modules/payment/payment.module';
+import { ProgressModule } from './modules/progress/progress.module';
+import { SearchModule } from './modules/search/search.module';
 
 @Module({
   imports: [
@@ -22,6 +24,8 @@ import { PaymentModule } from './modules/payment/payment.module';
     ModuleModule,
     StripeModule,
     PaymentModule,
+    ProgressModule,
+    SearchModule,
   ],
   controllers: [AppController],
   providers: [AppService],
