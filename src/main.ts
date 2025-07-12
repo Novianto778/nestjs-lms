@@ -4,6 +4,8 @@ import helmet from 'helmet';
 import { ValidationPipe } from '@nestjs/common';
 import { LoggerService } from './core/logger/logger.service';
 import * as express from 'express';
+import { RedisIoAdapter } from './common/adapter/redis-io.adapter';
+import { ConfigService } from '@nestjs/config';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
@@ -23,6 +25,13 @@ async function bootstrap() {
   app.useLogger(app.get(LoggerService));
   app.use(helmet());
   app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
+
+  const configService = app.get(ConfigService);
+  const redisIoAdapter = new RedisIoAdapter(app, configService);
+  await redisIoAdapter.connectToRedis();
+
+  app.useWebSocketAdapter(redisIoAdapter);
+
   await app.listen(process.env.PORT ?? 3000);
 }
 bootstrap();

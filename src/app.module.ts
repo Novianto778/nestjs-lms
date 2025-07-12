@@ -13,6 +13,7 @@ import { PaymentModule } from './modules/payment/payment.module';
 import { ProgressModule } from './modules/progress/progress.module';
 import { SearchModule } from './modules/search/search.module';
 import { SyncModule } from './modules/sync/sync.module';
+import { ChatModule } from './modules/chat/chat.module';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { SyncModule } from './modules/sync/sync.module';
     ProgressModule,
     SearchModule,
     SyncModule,
+    ChatModule,
   ],
   controllers: [AppController],
   providers: [AppService],
