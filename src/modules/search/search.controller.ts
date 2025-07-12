@@ -15,12 +15,45 @@ export class SearchController {
     };
   }
 
+  @Get('reindex')
+  async reindex() {
+    const result = await this.searchService.reindexCourses();
+    return {
+      data: result,
+      message: 'Reindex results',
+    };
+  }
+
+  @Get('create-index')
+  async createIndex() {
+    await this.searchService.createIndex();
+    return {
+      message: 'Index created',
+    };
+  }
+
   @Get('autocomplete')
   async autocomplete(@Query('q') query: string) {
     const result = await this.searchService.autocomplete(query);
     return {
       data: result,
       message: 'Autocomplete results',
+    };
+  }
+
+  @Get('delete-index')
+  async deleteIndex() {
+    await this.searchService.deleteCourseIndex();
+    return {
+      message: 'Index deleted',
+    };
+  }
+
+  @Get('index-all-courses')
+  async indexAllCourses() {
+    await this.searchService.indexAllCoursesData();
+    return {
+      message: 'All courses indexed',
     };
   }
 }
